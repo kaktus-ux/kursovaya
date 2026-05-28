@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Добавить администратора</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body.dark-mode {
+            background-color: #343a40;
+            color: white;
+        }
+        .dark-mode .table-striped{
+            color: white;
+        }
+        .dark-mode .table {
+            background-color: #495057;
+            color: white;
+        }
+        .dark-mode .table tr{
+            color: white;
+        }
+        .dark-mode .table th {
+            background-color: #6c757d;
+        }
+        .dark-mode .btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .dark-mode .btn:hover {
+            background-color: #5a6268;
+        }
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        .table{
+            border-radius: 5px;
+        }
+        .dropdown-item:hover {
+            background-color: #343a40; /* Темно-серый цвет для фона при наведении */
+            color: white; /* Цвет текста при наведении */
+        }
+        .dropdown-item.active {
+            background-color: #343a40; /* Темно-серый цвет для фона при наведении */
+            color: white; /* Цвет текста при наведении */
+        }
+        .offcanvas-body{
+            background-color: rgba(33, 37, 41, 1);
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;  /* Ширина огонька */
+            height: 10px; /* Высота огонька */
+            border-radius: 50%; /* Круглая форма */
+            margin-right: 5px; /* Отступ справа */
+        }
+        .online {
+            background-color: green; /* Зеленый для онлайн */
+        }
+        .offline {
+            background-color: red; /* Красный для оффлайн */
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#" style="margin-left: 30px; font-size: x-large;">Административная панель</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Меню</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+            </div>
+            <div class="offcanvas-body">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="admin" style="margin-top: 9px;">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="admin_list" style="margin-top: 9px;">Администраторы</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img id="avatarImg" src="{{ url_for('static', filename='images/'+avatar_src) }}" style="max-width: 40px; max-height: 40px; width: 100%; height: 100%; border-radius: 25px;" alt="Avatar" />
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown" style="border: none; background-color: rgba(33, 37, 41, 1);">
+                            <li><a class="dropdown-item" style="color: white" href="profile">Профиль</a></li>
+                            <li><a class="dropdown-item" style="color: white;"href="logout">Выход</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h2 class="mb-4">Список администраторов</h2>
+        <table class="table table-striped" id = "myTable">
+            <thead>
+                <tr>
+                    <th>Имя пользователя</th>
+                    <th>Роль</th>
+                    <th>Почта</th>
+                    <th>Номер телефона</th>
+                    <th>Онлайн</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.role }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone }}</td>
+                    <td>
+                        {% if user.online %}
+                            <span class="status-indicator online"></span> Online
+                        {% else %}
+                            <span class="status-indicator offline"></span> Offline
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
+        <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" aria-label="Toggle theme (auto)">
+            <svg class="bi my-1 theme-icon-active" width="1em" height="1em"><use href="#circle-half"></use></svg>
+            <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
+            <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
+                    <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#sun-fill"></use></svg>
+                    Светлая
+                    <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+                </button>
+            </li>
+            <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
+                    <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#moon-stars-fill"></use></svg>
+                    Темная
+                    <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+                </button>
+            </li>
+            <li>
+                <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="auto" aria-pressed="true">
+                    <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#circle-half"></use></svg>
+                    Авто
+                    <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+                </button>
+            </li>
+        </ul>
+    </div> 
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleTheme(); // Устанавливаем тему при загрузке страницы
+
+            // Обработчики событий для кнопок выбора темы
+            const themeButtons = document.querySelectorAll('.dropdown-item');
+            themeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const theme = button.getAttribute('data-bs-theme-value');
+                    setTheme(theme);
+                });
+            });
+        });
+        function toggleTheme() {
+            const theme = localStorage.getItem('theme') || 'auto'; // Получаем тему из localStorage или устанавливаем светлую по умолчанию
+            const isDarkMode = theme === 'dark';
+            const isLightMode = theme === 'light';
+
+            // Устанавливаем тему
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+            }
+
+            // Обновляем классы таблицы
+            updateTableClasses(isDarkMode);
+            
+            // Обновляем активное состояние кнопок
+            updateActiveThemeButton(theme);
+        }
+        function setTheme(theme) {
+            const isDarkMode = theme === 'dark';
+            const isLightMode = theme === 'light';
+
+            // Устанавливаем тему
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+            } else if (isLightMode) {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+            } else {
+                // Автоматическая тема (например, в зависимости от системных настроек)
+                const currentHour = new Date().getHours();
+                if (currentHour < 6 || currentHour > 18) {
+                    document.body.classList.add('dark-mode');
+                    document.body.classList.remove('light-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    document.body.classList.add('light-mode');
+                }
+            }
+
+            // Сохраняем тему в localStorage
+            localStorage.setItem('theme', theme || 'auto');
+
+            // Обновляем классы таблицы
+            updateTableClasses(isDarkMode);
+            
+            // Обновляем активное состояние кнопок
+            updateActiveThemeButton(theme);
+        }
+
+        function updateTableClasses(isDarkMode) {
+            const table = document.getElementById('myTable');
+            if (isDarkMode) {
+                table.classList.remove('table-striped');
+                table.classList.add('table-dark', 'table-striped');
+            } else {    
+                table.classList.remove('table-dark', 'table-striped');
+                table.classList.add('table-striped');
+            }
+        }
+
+        function updateActiveThemeButton(selectedTheme) {
+            const themeButtons = document.querySelectorAll('.dropdown-item');
+            themeButtons.forEach(button => {
+                const themeValue = button.getAttribute('data-bs-theme-value');
+                if (themeValue === selectedTheme) {
+                    button.classList.add('active');
+                    button.setAttribute('aria-pressed', 'true');
+                } else {
+                    button.classList.remove('active');
+                    button.setAttribute('aria-pressed', 'false');
+                }
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
+  

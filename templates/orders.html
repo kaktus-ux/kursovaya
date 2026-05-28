@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Панель заказов</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body.dark-mode {
+            background-color: #343a40;
+            color: white;
+        }
+        .table{
+            background-color: rgb(239, 239, 239);
+            overflow: hidden;
+            border-radius: 5px
+        }
+        .dark-mode .table {
+            color: white;
+        }
+        .dark-mode .table td{
+            border: none;
+        }
+        .dropdown-item:hover {
+            background-color: #343a40; /* Темно-серый цвет для фона при наведении */
+            color: white; /* Цвет текста при наведении */
+        }
+        .dropdown-item.active {
+            background-color: #343a40; /* Темно-серый цвет для фона при наведении */
+            color: white; /* Цвет текста при наведении */
+        }
+        
+        .table th{
+            border: none;
+            background-color: #c5c5c5;
+        }
+        .dark-mode .table th {
+            background-color: #6c757d;
+        }
+        .add_table tr{
+            background-color: white;
+        }
+        .dark-mode .add_table tr{
+            background-color: #495057;
+        }
+        .dark-mode .btn {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .dark-mode .btn:hover {
+            background-color: #5a6268;
+        }
+        /* Стили для кнопки смены темы */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000; /* Чтобы кнопка была поверх других элементов */
+        }
+        .pagination .btn {
+            background-color: transparent; /* Убираем фон */
+            border: none; /* Убираем границу */
+            color: inherit; /* Устанавливаем цвет текста в соответствии с родителем */
+        }
+        .dark-mode .pagination .btn:hover{
+            background-color: white; /* Цвет фона для активной кнопки */
+            color: black;
+            border-radius: 45%;
+        }
+        .pagination .btn.active {
+            background-color:#d3d3d3;
+            color: black;
+            border-radius: 45%;
+        }
+        .dark-mode .pagination .btn.active {
+            background-color: #5a6268; /* Цвет фона для активной кнопки */
+            color: white;
+            border-radius: 45%;
+        }
+
+        .pagination .btn:hover {
+            background-color: #d3d3d3;
+            color: black;
+            border-radius: 45%;
+            cursor: pointer; /* Указатель при наведении */
+        }
+
+        .btn-info{
+            background-color: #c5c5c5;
+            border: none;
+            border-radius: 5px;
+            height: 50px;
+            width: 50px;
+        }
+        .btn-info:hover{
+            box-shadow: 0 4px 15px black;
+        }
+        .dark-mode .btn-info{
+            border-radius: 5px;
+            border: none;
+            color: white;
+            background-color: #495057;
+        }
+        .dark-mode .btn-info:hover{
+            background-color: #5a6268;
+        }
+        input{
+            border: none;
+            background-color: transparent;
+        }
+        input.active{
+            border: 1px solid black;
+        }
+        .dark-mode input{
+            color: white;
+        }
+        .offcanvas-body{
+            background-color: rgba(33, 37, 41, 1);
+        }
+        /* .btn1{
+            border: none;
+            background-color: transparent;
+            color: black;
+        }
+        .btn1:hover{
+            color:#5a6268;
+        } */
+    </style>
+    <script>
+        let currentPage = 1;
+
+        function loadUsers(page) {
+            fetch(`/api/users?page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('tableBody');
+                    tableBody.innerHTML = '';
+
+                    // Проверяем, есть ли пользователи
+                    if (data.users.length === 0) {
+                        if (page > 1) {
+                            currentPage--;
+                            loadUsers(currentPage);
+                        }
+                        return;
+                    }
+
+                    // Загружаем пользователей в таблицу
+                    data.users.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.setAttribute('id', `user-row-${user[1]}-${user[0]}`);
+                        row.innerHTML = `
+                            <td>${user[4]}</td>
+                            <td>${user[1]}</td>
+                            <td>${user[2]}</td>
+                            <td>${user[3]}</td>
+                            <td>
+                                <input type="text" id="newValue_${user[1]}_${user[0]}" value="${user[5]}" style="border-radius: 10px; height: 40px; width: 40px; text-align: center;" onblur="updateValue('${user[1]}', '${user[0]}')" onkeydown="checkEnter(event, '${user[1]}', '${user[0]}')" />
+                            </td>
+                            <td style="font-weight: bold">${user[6]} руб.</td>
+                            <td style="text-align: center;">
+                                <button id="showMoreBtn-${user[1]}-${user[0]}" class="btn-info" onclick="toggleDetails(${user[1]}, ${user[0]}, this)">▼</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+
+                        // Создаем дополнительную строку для деталей
+                        const additionalRow = document.createElement('tr');
+                        additionalRow.setAttribute('id', `additionalTable-${user[1]}-${user[0]}`);
+                        additionalRow.style.display = 'none'; // Скрываем по умолчанию
+                        additionalRow.innerHTML = `
+                            <td colspan="7">
+                                <h4 style = "padding: 5px; text-align: left;">Информация о заказе</h4>
+                                <div class="add_table" id="additionalTableContainer-${user[1]}-${user[0]}" style="display:none;">
+                                    <table class="table" style="font-size: large">
+                                        <thead>
+                                            <tr>
+                                                <th>Название</th>
+                                                <th>Цена</th>
+                                                <th>Артикул</th>
+                                                <th>Количество</th>
+                                                <th>Суммарная цена</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="additionalTableBody-${user[1]}-${user[0]}"></tbody>
+                                    </table>
+                                    <h4 id="totalPrice-${user[1]}-${user[0]}" style="display:none; padding: 5px; text-align: left;">Итог: <span id="totalAmount-${user[1]}-${user[0]}">0</span> руб.</h4> 
+                                </div>
+                                <div id="noDataMessage-${user[1]}-${user[0]}" style="display:none; text-align: center;">Корзина пуста</div>
+                            </td>
+                        `;
+                        // Добавляем дополнительную строку в таблицу
+                        tableBody.appendChild(additionalRow);
+                    });
+
+                    // Обновляем пагинацию
+                    updatePagination(data.total_pages);
+                });
+        }
+
+        function updatePagination(totalPages) {
+            const pageNumbersContainer = document.getElementById('pageNumbers');
+            pageNumbersContainer.innerHTML = ''; // Очищаем предыдущие номера страниц
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i;
+                pageButton.className = 'btn btn-secondary mx-1';
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    loadUsers(currentPage);
+                });
+
+                // Добавляем класс "active" для текущей страницы
+                if (i === currentPage) {
+                    pageButton.classList.add('active');
+                }
+
+                pageNumbersContainer.appendChild(pageButton);
+            }
+        }
+
+        function toggleDetails(userId, orderId, button) {
+            const additionalTable = document.getElementById(`additionalTable-${userId}-${orderId}`);
+            const additionalTableContainer = document.getElementById(`additionalTableContainer-${userId}-${orderId}`);
+            const noDataMessage = document.getElementById(`noDataMessage-${userId}-${orderId}`);
+            const totalPriceElement = document.getElementById(`totalPrice-${userId}-${orderId}`);
+            const totalAmountElement = document.getElementById(`totalAmount-${userId}-${orderId}`);
+
+            if (additionalTable.style.display === 'none') {
+                // Выполняем AJAX-запрос для получения данных корзины с использованием orderId
+                fetch(`/api/data/${userId}/${orderId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Ошибка при загрузке данных');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        let tableBody = additionalTable.querySelector('tbody');
+                        tableBody.innerHTML = ''; // Очистить предыдущие данные
+                        additionalTableContainer.style.display = 'none'; // Скрываем контейнер таблицы
+                        noDataMessage.style.display = 'none';
+                        totalPriceElement.style.display = 'none'; // Скрываем сумму заказа
+                        let totalSum = 0; // Переменная для хранения суммы заказа
+
+                        if (data.length === 0) {
+                            noDataMessage.style.display = 'block'; // Показываем сообщение о пустой корзине
+                        } else {
+                            additionalTableContainer.style.display = 'block'; // Показываем контейнер таблицы
+                            data.forEach(item => {
+                                let row = tableBody.insertRow();
+                                row.insertCell(0).textContent = item.nazv;
+                                row.insertCell(1).textContent = item.price;
+                                row.insertCell(2).textContent = item.art;
+                                row.insertCell(3).textContent = item.quantity;
+                                row.insertCell(4).textContent = item.sumprice;
+                                // Добавляем сумму заказа
+                                totalSum += item.sumprice;
+                            });
+                            totalAmountElement.textContent = totalSum; // Обновляем текст суммы заказа
+                            totalPriceElement.style.display = 'block'; // Показываем сумму заказа
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        alert('Ошибка при загрузке данных: ' + error.message);
+                    });
+
+                additionalTable.style.display = 'table-row';
+                button.textContent = '▲';
+            } else {
+                additionalTable.style.display = 'none';
+                button.textContent = '▼';
+                additionalTableContainer.style.display = 'none'; // Скрываем контейнер таблицы
+                noDataMessage.style.display = 'none'; // Скрываем сообщение
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleTheme(); // Устанавливаем тему при загрузке страницы
+
+            // Обработчики событий для кнопок выбора темы
+            const themeButtons = document.querySelectorAll('.dropdown-item');
+            themeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const theme = button.getAttribute('data-bs-theme-value');
+                    setTheme(theme);
+                });
+            });
+        });
+        function toggleTheme() {
+            const theme = localStorage.getItem('theme') || 'auto'; // Получаем тему из localStorage или устанавливаем светлую по умолчанию
+            const isDarkMode = theme === 'dark';
+            const isLightMode = theme === 'light';
+
+            // Устанавливаем тему
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+            }
+
+            // Обновляем классы таблицы
+            updateTableClasses(isDarkMode);
+            
+            // Обновляем активное состояние кнопок
+            updateActiveThemeButton(theme);
+        }
+        function setTheme(theme) {
+            const isDarkMode = theme === 'dark';
+            const isLightMode = theme === 'light';
+
+            // Устанавливаем тему
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+            } else if (isLightMode) {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+            } else {
+                // Автоматическая тема (например, в зависимости от системных настроек)
+                const currentHour = new Date().getHours();
+                if (currentHour < 6 || currentHour > 18) {
+                    document.body.classList.add('dark-mode');
+                    document.body.classList.remove('light-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    document.body.classList.add('light-mode');
+                }
+            }
+
+            // Сохраняем тему в localStorage
+            localStorage.setItem('theme', theme || 'auto');
+
+            // Обновляем классы таблицы
+            updateTableClasses(isDarkMode);
+            
+            // Обновляем активное состояние кнопок
+            updateActiveThemeButton(theme);
+        }
+
+        function updateTableClasses(isDarkMode) {
+            const table = document.getElementById('myTable');
+            if (isDarkMode) {
+                table.classList.remove('table-striped');
+                table.classList.add('table-dark', 'table-striped');
+            } else {    
+                table.classList.remove('table-dark', 'table-striped');
+                table.classList.add('table-striped');
+            }
+        }
+
+        function updateActiveThemeButton(selectedTheme) {
+            const themeButtons = document.querySelectorAll('.dropdown-item');
+            themeButtons.forEach(button => {
+                const themeValue = button.getAttribute('data-bs-theme-value');
+                if (themeValue === selectedTheme) {
+                    button.classList.add('active');
+                    button.setAttribute('aria-pressed', 'true');
+                } else {
+                    button.classList.remove('active');
+                    button.setAttribute('aria-pressed', 'false');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers(currentPage);
+            document.getElementById('prevPage').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadUsers(currentPage);
+                }
+            });
+            document.getElementById('nextPage').addEventListener('click', () => {
+                currentPage++;
+                loadUsers(currentPage);
+            });
+
+        });
+        function updateValue(userId, orderNumber) {
+            const newValue = document.getElementById(`newValue_${userId}_${orderNumber}`).value;
+            if (newValue) {
+                fetch('/update-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_number: orderNumber,
+                        userid: userId,
+                        success: newValue
+                    }),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Ошибка при обновлении значения');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Успех:', data);
+                    // Обновляем значение в ячейке таблицы
+                    document.getElementById(`userValue_${userId}_${orderNumber}`).textContent = newValue;
+                })
+                .catch((error) => {
+                    console.error('Ошибка:', error);
+                });
+            } else {
+                alert("Введите значение для обновления.");
+            }
+        }
+
+        function checkEnter(event, userid, order_number) {
+            if (event.key === 'Enter') {
+                if (userid && order_number) {
+                    updateValue(userid, order_number);
+                } else {
+                    console.error("Ошибка: userid или order_number не определены.");
+                }
+                const newValueElement = document.getElementById(`newValue_${userid}_${order_number}`);
+                if (newValueElement) {
+                    newValueElement.blur();
+                } else {
+                    console.error("Ошибка: элемент с id 'newValue' не найден.");
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#" style="margin-left: 30px; font-size: x-large;">Административная панель</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Меню</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+            </div>
+            <div class="offcanvas-body">
+                <div class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="admin" style="margin-top: 9px;">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="admin_list" style="margin-top: 9px;">Администраторы</a>
+                    </li>
+                </div>
+                <div class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img id="avatarImg" src="{{ url_for('static', filename='images/'+avatar_src) }}" style="max-width: 40px; max-height: 40px; width: 100%; height: 100%; border-radius: 25px;" alt="Avatar" />
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown" style="border: none; background-color: rgba(33, 37, 41, 1);">
+                            <li><a class="dropdown-item" style="color: white" href="profile">Профиль</a></li>
+                            <li><a class="dropdown-item" style="color: white;"href="logout">Выход</a></li>
+                        </ul>
+                    </li>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h3 class="bold" style="margin-bottom: 20px;">Список заказов</h3>
+        <table id="myTable" class="table table-striped" style="width: device-width; height: 120px; text-align: center;">
+            <thead>
+                <tr style="font-size: large; font-weight: lighter;">
+                    <th style="width: 15%">Время заказа</th>
+                    <th style="width: 15%">Telegram ID</th>
+                    <th style="width: 15%">Имя пользователя</th>
+                    <th style="width: 15%">Номер телефона</th>
+                    <th style="width: 10%">Заказ оплачен</th>
+                    <th style="width: 15%">Сумма заказа</th>
+                    <th style="width: 1%">Действия</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="main" style="font-size: larger;"></tbody>
+        </table>
+        <div class="pagination">
+            <!-- <button id="prevPage" class="btn1 mx-1">Назад</button> -->
+            <span id="pageNumbers" class="mx-2"></span>
+            <!-- <button id="nextPage" class="btn1 mx-1">Вперед</button> -->
+        </div>
+    </div>
+    <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
+        <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" aria-label="Toggle theme (auto)">
+            <svg class="bi my-1 theme-icon-active" width="1em" height="1em"><use href="#circle-half"></use></svg>
+            <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
+            <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
+                    <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#sun-fill"></use></svg>
+                    Светлая
+                    <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+                </button>
+            </li>
+            <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
+                    <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#moon-stars-fill"></use></svg>
+                    Темная
+                    <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+                </button>
+            </li>
+            <li>
+                <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="auto" aria-pressed="true">
+                    <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#circle-half"></use></svg>
+                    Авто
+                    <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+                </button>
+            </li>
+        </ul>
+    </div>    
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
