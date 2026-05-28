@@ -1,0 +1,101 @@
+.tablebtn{
+    margin: 3px auto;
+    width: 100px;
+    height: 45px;
+    text-align: center;
+}
+/* .admins{
+    order: 2;
+    margin-left: 50px;
+    flex-direction: column;
+} */
+/* .all{
+    display: flex; 
+    flex-direction: row;
+} */
+/* .container{
+    position: relative;
+    height: 75px;
+    top: 8px;
+    text-align: center;
+    flex-direction: column;
+    order: 1;
+} */
+
+/* .form-group{
+    margin-bottom: 10px;
+}
+.add_admin{
+    margin-top: 10px;       
+} */
+.bold{
+    text-align: center;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+body{
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    background-color:  rgb(2, 26, 47);;
+    height: 100vh; /* Высота на весь экран */
+    margin: 0; /* Убираем отступы */
+}
+.pagination{
+    order: 3;
+    position: relative;
+}
+.users{
+    order: 3;
+    width: 730px;
+    place-self: center;
+    /* table-layout: fixed; */
+    top: -178px;
+    margin-left: 25%;
+}
+.add_table{
+    width: 900px;
+}
+.users th, .users td {
+    border-collapse: collapse;
+    border: 1px solid black; /* Рамка для ячеек */
+    border-radius: 4px;
+    padding: 8px; /* Отступ внутри ячеек */
+    text-align: center; /* Выравнивание текста */
+    background-color: white;
+    color: black; /* Цвет фона для заголовков */
+}
+h1,h2,h3 {
+    color: white; /* Цвет текста заголовка */
+} 
+.users h3{
+    color: black
+}
+button{
+    padding: 8px;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    border: 1px solid white;
+    border-radius: 5px;
+    background-color:  rgb(2, 26, 47);
+    color: white;
+
+}
+button:hover{
+    cursor: pointer;
+    box-shadow: 0 4px 15px white;
+
+}
+.tablebtn:hover{
+    cursor: pointer;
+    box-shadow: 0 4px 15px black;
+
+}
+/* input{
+    display: flex;
+    order: 2;
+    padding: 5px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 1px solid black;
+    width: 200px;
+} */
+/* *{
+    outline: 1px solid green;
+} */
